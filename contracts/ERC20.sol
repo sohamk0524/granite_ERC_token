@@ -161,12 +161,14 @@ contract ERC20 is IERC20 {
 		return true;
   }
 
+  //Safe mint only accesible by owner to circulate tokens into flow
 	function safeMint(uint256 amount) public returns (bool) {
 		require(msg.sender == _owner);
 		_mint(_owner, amount);
 		return true;
 	}
 
+  //Safe mint only accesible to owner to mint tokens for a specific user
 	function safeMint(address mintTo, uint256 amount) public returns (bool) {
 		require(msg.sender == _owner);
 		_mint(mintTo, amount);

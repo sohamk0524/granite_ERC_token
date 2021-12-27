@@ -64,6 +64,7 @@ describe("Token Economics Basics", function () {
       await deployedContract.contract.connect(user1).transfer(owner.address, amountTransferred);
 
     } catch (err) {
+      console.log("Caught");
     }
     expect(await deployedContract.contract.balanceOf(deployedContract.owner.address)).to.equal(oldOwnerBalance);
     expect(await deployedContract.contract.balanceOf(user1.address)).to.equal(0);
@@ -173,5 +174,20 @@ describe("Token Transfers", function (){
       expect(false).to.equal(true);
     }
     expect(true).to.equal(true);
+  });
+});
+
+describe("Minting Tests", function(){
+  it("Should catch an error if anyone besides owner tries to mint tokens", async function(){
+    let deployedContract = deployContract();
+    const [owner, user1] = await ethers.getSigners();
+    let amountMinted = 1000;
+
+    try{
+      await deployedContract.contract.connect(user1).safeMint(amountMinted);
+    }catch(err){
+      console.log("Caught Mint");
+    }
+
   });
 });
