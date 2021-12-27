@@ -23,6 +23,14 @@ contract ERC20 is IERC20 {
 	uint8 private _decimals;
   uint256 private _totalSupply;
 
+  constructor() { 
+    _name = "Granite";
+    _symbol = "GTE"; 
+    _decimals = 10;
+    _totalSupply = 100000000;
+
+  }
+
   /**
 	* @dev Name of the token
    */
