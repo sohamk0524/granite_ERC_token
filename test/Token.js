@@ -1,19 +1,89 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-/*describe("Token contract", function () {
-  it("Deployment should assign the total supply of tokens to the owner", async function () {
+async function deployContract() {
     const [owner] = await ethers.getSigners();
-
-    const Token = await ethers.getContractFactory("ERC20");
-
+    const Token = await ethers.getContractFactory("ERC20", owner);
     const hardhatToken = await Token.deploy();
+    return { owner: owner, contract: hardhatToken };
+}
 
-    const ownerBalance = await hardhatToken.balanceOf(owner.address);
-    expect(await hardhatToken.totalSupply()).to.equal(ownerBalance);
+describe("Token contract", function () {
+  it("Deployment should assign the total supply of tokens to the owner", async function () {
+    let deployedContract = await deployContract(); 
+
+    const ownerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
+    expect(await deployedContract.contract.totalSupply()).to.equal(ownerBalance);
   });
 });
-*/
+
+describe("Token Economics Basics", function () {
+  it("Token Initialization Test", async function () {
+    let deployedContract = await deployContract(); 
+
+    const ownerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
+    expect(await deployedContract.contract.totalSupply()).to.equal(ownerBalance);
+  });
+  it("Transfer Token from Owner to 1st User", async function () {
+    let deployedContract = await deployContract();
+
+    let amountTransferred = 1000;
+    const oldOwnerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
+
+    const [owner, user1] = await ethers.getSigners();
+
+    await deployedContract.contract.transfer(user1.address, amountTransferred);
+
+    expect(await deployedContract.contract.balanceOf(deployedContract.owner.address)).to.equal(oldOwnerBalance - amountTransferred);
+    expect(await deployedContract.contract.balanceOf(user1.address)).to.equal(amountTransferred);
+  })
+
+  it("Transfer on Behalf of Owner to 1st User", async function() {
+    let deployedContract = await deployContract();
+
+    let amountTransferred = 1000;
+    const oldOwnerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
+
+    const [owner, user1, user2] = await ethers.getSigners();
+
+    await deployedContract.contract.approve(user2.address, amountTransferred);
+    await deployedContract.contract.connect(user2).transferFrom(owner.address, user1.address, amountTransferred);
+
+    expect(await deployedContract.contract.balanceOf(deployedContract.owner.address)).to.equal(oldOwnerBalance - amountTransferred);
+    expect(await deployedContract.contract.balanceOf(user1.address)).to.equal(amountTransferred);
+  })
+
+  it("Transfer Token from Empty Account", async function() {
+    let deployedContract = await deployContract();
+
+    let amountTransferred = 1000;
+    const oldOwnerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
+
+    const [owner, user1] = await ethers.getSigners();
+    try {
+      await deployedContract.contract.connect(user1).transfer(owner.address, amountTransferred);
+
+    } catch (err) {
+    }
+    expect(await deployedContract.contract.balanceOf(deployedContract.owner.address)).to.equal(oldOwnerBalance);
+    expect(await deployedContract.contract.balanceOf(user1.address)).to.equal(0);
+  })
+
+  it("Transfer More of Behalf of Owner to 1st User", async function() {
+    let deployedContract = await deployContract();
+
+    let amountTransferred = 1000;
+    const oldOwnerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
+
+    const [owner, user1, user2] = await ethers.getSigners();
+
+    await deployedContract.contract.approve(user2.address, amountTransferred);
+    await deployedContract.contract.connect(user2).transferFrom(owner.address, user1.address, amountTransferred);
+
+    expect(await deployedContract.contract.balanceOf(deployedContract.owner.address)).to.equal(oldOwnerBalance - amountTransferred);
+    expect(await deployedContract.contract.balanceOf(user1.address)).to.equal(amountTransferred);
+  })
+});
 
 
 describe("Token basics", function (){
@@ -52,7 +122,6 @@ describe("Token basics", function (){
     const totalSupply  = await hardhatToken.totalSupply();
 
   });
-
 
   it("Deployment should assign decimals to token", async function () {
     const [owner] = await ethers.getSigners();
@@ -104,16 +173,5 @@ describe("Token Transfers", function (){
       expect(false).to.equal(true);
     }
     expect(true).to.equal(true);
-   /*
-   hardhatToken.increaseAllowance(user.address, increase).then(function(result) {
-     console.log(result);
-     if (result) {
-       console.log(result);
-       allowance += increase;
-     }
-     expect(allowance).to.equal(1500);
-   })
-   */
-    
   });
 });
