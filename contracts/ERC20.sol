@@ -15,20 +15,21 @@ contract ERC20 is IERC20 {
   using SafeMath for uint256;
 
   mapping (address => uint256) private _balances;
-
   mapping (address => mapping (address => uint256)) private _allowed;
 
   string private _name;
   string private _symbol;
+	address private _owner;
 	uint8 private _decimals;
   uint256 private _totalSupply;
 
   constructor() { 
     _name = "Granite";
-    _symbol = "GTE"; 
+    _symbol = "GTE";
+		_owner = msg.sender;
     _decimals = 10;
     _totalSupply = 100000000;
-
+		_balances[_owner] = _totalSupply;
   }
 
   /**
@@ -45,6 +46,9 @@ contract ERC20 is IERC20 {
 		return _symbol;
   }
 
+	/**
+		* @dev Decimals Significance of the Token
+	 */
 	function decimals() public view returns (uint8) {
 		return _decimals;
 	}
@@ -156,6 +160,18 @@ contract ERC20 is IERC20 {
 		emit Approval(msg.sender, spender, _allowed[msg.sender][spender]);
 		return true;
   }
+
+	function safeMint(uint256 amount) public returns (bool) {
+		require(msg.sender == _owner);
+		_mint(_owner, amount);
+		return true;
+	}
+
+	function safeMint(address mintTo, uint256 amount) public returns (bool) {
+		require(msg.sender == _owner);
+		_mint(mintTo, amount);
+		return true;
+	}
 
   /**
    * @dev Internal function that mints an amount of the token and assigns it to
