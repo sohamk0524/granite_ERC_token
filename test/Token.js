@@ -186,8 +186,20 @@ describe("Minting Tests", function(){
     try{
       await deployedContract.contract.connect(user1).safeMint(amountMinted);
     }catch(err){
-      console.log("Caught Mint");
+      console.log("Caught Invalid Mint");
     }
 
+  });
+
+  it("Should catch an error if someone besides the owner tries to mint tokens to another user", async function(){
+    let deployedContract = deployContract();
+    const [owner, user1, user2] = await ethers.getSigners();
+    let amountMinted = 1000;
+
+    try{
+      await deployedContract.contract.connect(user1).safeMint(user2.address, amountMinted);
+    }catch(err){
+      console.log("Caught Invalid Mint");
+    }
   });
 });
