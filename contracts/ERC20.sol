@@ -30,8 +30,8 @@ contract ERC20 is IERC20 {
     _symbol = "GTE";
     _chainID = chainID;
 		_owner = msg.sender;
-    _decimals = 10;
-    _totalSupply = 100000000;
+    _decimals = 18;
+    _totalSupply = 10**18;
 		_balances[_owner] = _totalSupply;
   }
 
