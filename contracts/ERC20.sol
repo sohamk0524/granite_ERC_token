@@ -15,17 +15,20 @@ contract ERC20 is IERC20 {
   using SafeMath for uint256;
 
   mapping (address => uint256) private _balances;
+  mapping (address => uint256) private _escrowBalances;
   mapping (address => mapping (address => uint256)) private _allowed;
 
   string private _name;
   string private _symbol;
+  uint256 private _chainID;
 	address private _owner;
 	uint8 private _decimals;
   uint256 private _totalSupply;
 
-  constructor() { 
+  constructor(uint256 chainID) { 
     _name = "Granite";
     _symbol = "GTE";
+    _chainID = chainID;
 		_owner = msg.sender;
     _decimals = 10;
     _totalSupply = 100000000;
@@ -66,7 +69,13 @@ contract ERC20 is IERC20 {
   * @return An uint256 representing the amount owned by the passed address.
   */
   function balanceOf(address owner) public view returns (uint256) {
-		return _balances[owner];
+		require(owner != address(0));
+		return _balances[owner].sub(_escrowBalances[owner]);
+  }
+
+  function escrowBalanceOf(address owner) public view returns (uint256) {
+    require(owner != address(0));
+    return _escrowBalances[owner];
   }
 
   /**
@@ -76,6 +85,7 @@ contract ERC20 is IERC20 {
    * @return A uint256 specifying the amount of tokens still available for the spender.
    */
   function allowance(address owner, address spender) public view returns (uint256) {
+		require(owner != address(0));
 		return _allowed[owner][spender];
   }
 
@@ -85,7 +95,7 @@ contract ERC20 is IERC20 {
   * @param value The amount to be transferred.
   */
   function transfer(address to, uint256 value) public returns (bool) {
-		require(value <= _balances[msg.sender]);
+		require(value <= balanceOf(msg.sender));
 		require(to != address(0));
 
 		_balances[msg.sender] = _balances[msg.sender].sub(value);
@@ -117,8 +127,8 @@ contract ERC20 is IERC20 {
    * @param to address The address which you want to transfer to
    * @param value uint256 the amount of tokens to be transferred
    */
-  function transferFrom( address from, address to, uint256 value) public returns (bool) {
-		require(value <= _balances[from]);
+  function transferFrom(address from, address to, uint256 value) public returns (bool) {
+		require(value <= balanceOf(from));
 		require(value <= _allowed[from][msg.sender]);
 		require(to != address(0));
 
@@ -155,6 +165,7 @@ contract ERC20 is IERC20 {
    * @param subtractedValue The amount of tokens to decrease the allowance by.
    */
   function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
+		require(subtractedValue <= _allowed[msg.sender][spender]);
 		require(spender != address(0));
 		_allowed[msg.sender][spender] = (_allowed[msg.sender][spender].sub(subtractedValue));
 		emit Approval(msg.sender, spender, _allowed[msg.sender][spender]);
@@ -174,6 +185,36 @@ contract ERC20 is IERC20 {
 		_mint(mintTo, amount);
 		return true;
 	}
+
+  function escrowDeposit(address owner, uint256 amount) public returns (bool) {
+    require(msg.sender == _owner);
+    require(amount <= balanceOf(owner));
+    _escrowBalances[owner] = _escrowBalances[owner].add(amount);
+    emit Transfer(owner, address(0), amount);
+    return true;
+  }
+
+  function escrowWithdraw(address owner, uint256 amount) public returns (bool) {
+    require(msg.sender == _owner);
+    require(amount <= _escrowBalances[owner]);
+    _escrowBalances[owner] = _escrowBalances[owner].sub(amount);
+    emit Transfer(address(0), owner, amount);
+    return true;
+  }
+
+  function bridge(address owner, uint256 amount, uint256 fromChain, uint256 toChain) public returns (bool) {
+    require(msg.sender == _owner);
+    if (fromChain == _chainID) {
+      //Getting transferred from this contract
+      _burn(owner, amount);
+    } else if (toChain == _chainID) {
+      //Getting transferred to this contract
+      _mint(owner, amount);
+    } else {
+      return false;
+    }
+    return true;
+  }
 
   /**
    * @dev Internal function that mints an amount of the token and assigns it to
@@ -197,7 +238,7 @@ contract ERC20 is IERC20 {
    */
   function _burn(address account, uint256 amount) internal {
 		require(account != address(0x0));
-		require(amount <= _balances[account]);
+		require(amount <= balanceOf(account));
 
 		_totalSupply = _totalSupply.sub(amount);
 		_balances[account] = _balances[account].sub(amount);
