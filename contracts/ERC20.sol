@@ -4,6 +4,9 @@ pragma solidity ^0.8.11;
 import "./IERC20.sol";
 import "./SafeMath.sol";
 
+
+
+
 /**
  * @title Standard ERC20 token
  *
@@ -12,6 +15,7 @@ import "./SafeMath.sol";
  * Originally based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
  */
 contract ERC20 is IERC20 {
+  
   using SafeMath for uint256;
 
   mapping (address => uint256) private _balances;
@@ -30,8 +34,8 @@ contract ERC20 is IERC20 {
     _symbol = "GTE";
     _chainID = chainID;
 		_owner = msg.sender;
-    _decimals = 18;
-    _totalSupply = 10**18;
+    _decimals = 10;
+    _totalSupply = 10000000000;
 		_balances[_owner] = _totalSupply;
   }
 
@@ -69,8 +73,7 @@ contract ERC20 is IERC20 {
   * @return An uint256 representing the amount owned by the passed address.
   */
   function balanceOf(address owner) public view returns (uint256) {
-		require(owner != address(0));
-		return _balances[owner].sub(_escrowBalances[owner]);
+		return _balances[owner];
   }
 
   function escrowBalanceOf(address owner) public view returns (uint256) {

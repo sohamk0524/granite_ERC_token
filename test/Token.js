@@ -1,10 +1,11 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const BigNumber = require('bignumber.js');
 
 async function deployContract() {
     const [owner] = await ethers.getSigners();
     const Token = await ethers.getContractFactory("ERC20", owner);
-    const hardhatToken = await Token.deploy();
+    const hardhatToken = await Token.deploy(1);
     return { owner: owner, contract: hardhatToken };
 }
 
@@ -26,11 +27,11 @@ describe("Token Economics Basics", function () {
   });
   it("Transfer Token from Owner to 1st User", async function () {
     let deployedContract = await deployContract();
-
+    const [owner, user1] = await ethers.getSigners();
     let amountTransferred = 1000;
     const oldOwnerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
 
-    const [owner, user1] = await ethers.getSigners();
+    
 
     await deployedContract.contract.transfer(user1.address, amountTransferred);
 
@@ -93,7 +94,7 @@ describe("Token basics", function (){
 
     const Token = await ethers.getContractFactory("ERC20", owner);
 
-    const hardhatToken = await Token.deploy();
+    const hardhatToken = await Token.deploy(1);
 
     const name  = await hardhatToken.name();
 
@@ -104,7 +105,7 @@ describe("Token basics", function (){
 
     const Token = await ethers.getContractFactory("ERC20", owner);
 
-    const hardhatToken = await Token.deploy();
+    const hardhatToken = await Token.deploy(1);
 
 
     const symbol  = await hardhatToken.symbol();
@@ -117,7 +118,7 @@ describe("Token basics", function (){
 
     const Token = await ethers.getContractFactory("ERC20", owner);
 
-    const hardhatToken = await Token.deploy();
+    const hardhatToken = await Token.deploy(1);
 
 
     const totalSupply  = await hardhatToken.totalSupply();
@@ -129,7 +130,7 @@ describe("Token basics", function (){
 
     const Token = await ethers.getContractFactory("ERC20", owner);
 
-    const hardhatToken = await Token.deploy();
+    const hardhatToken = await Token.deploy(1);
 
     const decimals  = await hardhatToken.decimals();
 
@@ -142,7 +143,7 @@ describe("Token Transfers", function (){
 
     const Token = await ethers.getContractFactory("ERC20", owner);
 
-    const hardhatToken = await Token.deploy(); 
+    const hardhatToken = await Token.deploy(1); 
 
     let transferAmount = 1000;
 
@@ -161,7 +162,7 @@ describe("Token Transfers", function (){
 
     const Token = await ethers.getContractFactory("ERC20", owner);
 
-    const hardhatToken = await Token.deploy(); 
+    const hardhatToken = await Token.deploy(1); 
 
     let allowance = 1000;
     let increase = 500;
@@ -179,7 +180,7 @@ describe("Token Transfers", function (){
 
 describe("Minting Tests", function(){
   it("Should catch an error if anyone besides owner tries to mint tokens", async function(){
-    let deployedContract = deployContract();
+    let deployedContract = await deployContract();
     const [owner, user1] = await ethers.getSigners();
     let amountMinted = 1000;
 
@@ -192,7 +193,7 @@ describe("Minting Tests", function(){
   });
 
   it("Should catch an error if someone besides the owner tries to mint tokens to another user", async function(){
-    let deployedContract = deployContract();
+    let deployedContract = await deployContract();
     const [owner, user1, user2] = await ethers.getSigners();
     let amountMinted = 1000;
 
@@ -201,5 +202,23 @@ describe("Minting Tests", function(){
     }catch(err){
       console.log("Caught Invalid Mint");
     }
+  });
+});
+
+describe("Bridging Tests", function(){
+  it("Successfully bridges Tokens out of main chain to side chain", async function(){
+
+    let deployedContract = await deployContract()
+    const [owner, user1] = await ethers.getSigners();
+    const ownerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
+    let amountTransferred = 1000;
+    let bridgedAmt = 500;
+
+    
+    await deployedContract.contract.transfer(user1.address, amountTransferred);
+
+    await deployedContract.contract.bridge(user1.address, bridgedAmt, 1,2);
+    expect(await deployedContract.contract.balanceOf(user1.address)).to.equal(bridgedAmt);
+
   });
 });
