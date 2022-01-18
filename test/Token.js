@@ -65,10 +65,12 @@ describe("Token Economics Basics", function () {
       await deployedContract.contract.connect(user1).transfer(owner.address, amountTransferred);
 
     } catch (err) {
-      console.log("Caught");
+      expect(true,true);
+      return;
     }
-    expect(await deployedContract.contract.balanceOf(deployedContract.owner.address)).to.equal(oldOwnerBalance);
-    expect(await deployedContract.contract.balanceOf(user1.address)).to.equal(0);
+
+    expect(false,true);
+   
   })
 
   it("Transfer More of Behalf of Owner to 1st User", async function() {
@@ -187,8 +189,11 @@ describe("Minting Tests", function(){
     try{
       await deployedContract.contract.connect(user1).safeMint(amountMinted);
     }catch(err){
-      console.log("Caught Invalid Mint");
+      expect(true,true);
+      return;
     }
+    
+    expect(false,true);
 
   });
 
@@ -200,8 +205,11 @@ describe("Minting Tests", function(){
     try{
       await deployedContract.contract.connect(user1).safeMint(user2.address, amountMinted);
     }catch(err){
-      console.log("Caught Invalid Mint");
+      expect(true, true);
+      return;
     }
+
+    expect(false,true);
   });
 });
 
@@ -236,6 +244,56 @@ describe("Bridging Tests", function(){
 
     await deployedContract.contract.bridge(user1.address, bridgedAmt, 2,1);
     expect(await deployedContract.contract.balanceOf(user1.address)).to.equal(bridgedAmt+amountTransferred);
+
+  });
+  
+  it("Bridges tokens from one contract to another", async function(){
+    let deployedContract1 = await deployContract(1); //Main Contract
+
+    let deployedContract2 = await deployContract(2); //Side Contract
+    
+    const[owner, user1, user2] = await ethers.getSigners();
+
+    let amountTransferred = 1000;
+    let bridgedAmount = 500;
+
+    await deployedContract1.contract.transfer(user1.address, amountTransferred);
+    await deployedContract2.contract.transfer(user2.address, amountTransferred);
+
+    let bridgeOut = await deployedContract1.contract.bridge(user1.address, bridgedAmount, 1, 2);
+
+    if(bridgeOut){
+      await deployedContract2.contract.bridge(user2.address, bridgedAmount, 1, 2);
+    }
+
+    expect(await deployedContract2.contract.balanceOf(user2.address)).to.equal(bridgedAmount+amountTransferred);
+    expect(await deployedContract1.contract.balanceOf(user1.address)).to.equal(bridgedAmount);
+
+
+  });
+
+  it("Show Invalid Bridging between Contracts", async function(){
+    let deployedContract1 = await deployContract(1); //Main Contract
+
+    let deployedContract2 = await deployContract(2); //Side Contract
+    
+    const[owner, user1, user2] = await ethers.getSigners();
+
+    let amountTransferred = 1000;
+    let bridgedAmount = 1500;
+
+    await deployedContract1.contract.transfer(user1.address, amountTransferred);
+    await deployedContract2.contract.transfer(user2.address, amountTransferred);
+
+    try{
+      await deployedContract1.contract.bridge(user1.address,bridgedAmount,1,2);
+    }catch(err){
+      //console.log("Caught Invalid Bridge Amount");
+      expect(true, true);
+      return;
+    }
+
+    expect(false, true);
 
   });
   
