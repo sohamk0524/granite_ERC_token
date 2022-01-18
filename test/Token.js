@@ -2,16 +2,16 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const BigNumber = require('bignumber.js');
 
-async function deployContract() {
+async function deployContract(chain) {
     const [owner] = await ethers.getSigners();
     const Token = await ethers.getContractFactory("ERC20", owner);
-    const hardhatToken = await Token.deploy(1);
+    const hardhatToken = await Token.deploy(chain);
     return { owner: owner, contract: hardhatToken };
 }
 
 describe("Token contract", function () {
   it("Deployment should assign the total supply of tokens to the owner", async function () {
-    let deployedContract = await deployContract(); 
+    let deployedContract = await deployContract(1); 
 
     const ownerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
     expect(await deployedContract.contract.totalSupply()).to.equal(ownerBalance);
@@ -20,13 +20,13 @@ describe("Token contract", function () {
 
 describe("Token Economics Basics", function () {
   it("Token Initialization Test", async function () {
-    let deployedContract = await deployContract(); 
+    let deployedContract = await deployContract(1); 
 
     const ownerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
     expect(await deployedContract.contract.totalSupply()).to.equal(ownerBalance);
   });
   it("Transfer Token from Owner to 1st User", async function () {
-    let deployedContract = await deployContract();
+    let deployedContract = await deployContract(1);
     const [owner, user1] = await ethers.getSigners();
     let amountTransferred = 1000;
     const oldOwnerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
@@ -40,7 +40,7 @@ describe("Token Economics Basics", function () {
   })
 
   it("Transfer on Behalf of Owner to 1st User", async function() {
-    let deployedContract = await deployContract();
+    let deployedContract = await deployContract(1);
 
     let amountTransferred = 1000;
     const oldOwnerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
@@ -55,7 +55,7 @@ describe("Token Economics Basics", function () {
   })
 
   it("Transfer Token from Empty Account", async function() {
-    let deployedContract = await deployContract();
+    let deployedContract = await deployContract(1);
 
     let amountTransferred = 1000;
     const oldOwnerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
@@ -72,7 +72,7 @@ describe("Token Economics Basics", function () {
   })
 
   it("Transfer More of Behalf of Owner to 1st User", async function() {
-    let deployedContract = await deployContract();
+    let deployedContract = await deployContract(1);
 
     let amountTransferred = 1000;
     const oldOwnerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
@@ -180,7 +180,7 @@ describe("Token Transfers", function (){
 
 describe("Minting Tests", function(){
   it("Should catch an error if anyone besides owner tries to mint tokens", async function(){
-    let deployedContract = await deployContract();
+    let deployedContract = await deployContract(1);
     const [owner, user1] = await ethers.getSigners();
     let amountMinted = 1000;
 
@@ -193,7 +193,7 @@ describe("Minting Tests", function(){
   });
 
   it("Should catch an error if someone besides the owner tries to mint tokens to another user", async function(){
-    let deployedContract = await deployContract();
+    let deployedContract = await deployContract(1);
     const [owner, user1, user2] = await ethers.getSigners();
     let amountMinted = 1000;
 
@@ -206,9 +206,10 @@ describe("Minting Tests", function(){
 });
 
 describe("Bridging Tests", function(){
+
   it("Successfully bridges Tokens out of main chain to side chain", async function(){
 
-    let deployedContract = await deployContract()
+    let deployedContract = await deployContract(1)
     const [owner, user1] = await ethers.getSigners();
     const ownerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
     let amountTransferred = 1000;
@@ -221,4 +222,22 @@ describe("Bridging Tests", function(){
     expect(await deployedContract.contract.balanceOf(user1.address)).to.equal(bridgedAmt);
 
   });
+  
+  it("Successfully bridges Tokens into main chain from side chain", async function(){
+
+    let deployedContract = await deployContract(1)
+    const [owner, user1] = await ethers.getSigners();
+    const ownerBalance = await deployedContract.contract.balanceOf(deployedContract.owner.address);
+    let amountTransferred = 1000;
+    let bridgedAmt = 500;
+
+    
+    await deployedContract.contract.transfer(user1.address, amountTransferred);
+
+    await deployedContract.contract.bridge(user1.address, bridgedAmt, 2,1);
+    expect(await deployedContract.contract.balanceOf(user1.address)).to.equal(bridgedAmt+amountTransferred);
+
+  });
+  
+
 });
