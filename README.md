@@ -1,4 +1,4 @@
-# nft_exchange_token
+granite_ERC_token
 
 Specialized fungible token named Granite built on the Ethereum blockchain based on the ERC-20 standard
 
